@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>com.cpb9.oimf</groupId>
-            <artifactId>parser</artifactId>
+            <artifactId>code-gen</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>

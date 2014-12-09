@@ -1,8 +1,6 @@
 package com.cpb9.oimf.codegen.tests;
 
 import com.cpb9.oimf.codegen.clang.CGeneratorConfiguration;
-import com.cpp.OimfCppGenerator;
-import com.cpp.OimfCppGeneratorConfiguration;
 import com.cpb9.oimf.codegen.sql.OimfSqlGenerator;
 import com.cpb9.oimf.codegen.sql.OimfSqlGeneratorConfiguration;
 import com.cpb9.oimf.codegen.yaml.OimfYamlGenerator;
