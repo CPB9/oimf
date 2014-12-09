@@ -1,0 +1,33 @@
+namespace com.cpb9.oimf.codegen.clang
+
+import com.cpb9.core.U16
+
+trait CGeneratorConfig
+    U16 currentIndent
+    Unit setCurrentIndent(Size indent)
+    Unit incCurrentIndent
+    Unit decCurrentIndent
+    Unit makeIndent(Appendable appendable)
+    Unit appendEol(Appendable appendable)
+
+trait Generatable[Config]
+    Unit generate(Appendable appendable, Config config)
+
+trait HElement extends Generatable[CGeneratorConfig]
+
+trait CElement extends HElement
+
+trait HStatement extends CElement
+
+trait CStatement extends HStatement
+
+trait CComment extends CStatement
+    String text
+
+trait CBlockComment extends CComment
+
+trait CExpression extends CElement
+
+trait CCallFunc extends CExpression, CSemicolonEndedStatement
+    String name
+    List[CExpression] arguments

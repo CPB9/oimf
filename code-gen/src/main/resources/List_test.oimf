@@ -1,0 +1,11 @@
+namespace com.cpb9.test.list
+
+trait SomeType
+
+trait Size
+
+trait List[T]
+    T get(Size index)
+
+trait SomeType2
+    List[SomeType] someField

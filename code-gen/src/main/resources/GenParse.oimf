@@ -1,0 +1,13 @@
+namespace com.cpb9.genparse
+
+trait ParsingResult[T]
+    T result
+    Boolean isMatched()
+
+trait Parser[T]
+    ParsingResult[T] parse(Reader reader)
+
+trait CodeGenerator[T]
+    GenerationResult[T] generate(T value, Writer write)
+
+trait ParserGenerator[T] extends Parser[T], CodeGenerator[T]

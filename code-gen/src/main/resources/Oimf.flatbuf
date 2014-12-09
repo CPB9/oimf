@@ -1,0 +1,35 @@
+namespace oimf;
+
+table TraitApplication {
+	name:string;
+	arguments:[TraitApplication];
+}
+
+table Field {
+	name:string;
+	type:TraitApplication;
+}
+
+table Method {
+	name:string;
+	arguments:[MethodArgument];
+	returnType:TraitApplication;
+}
+
+table MethodArgument {
+	name:string;
+	type:TraitApplication;
+}
+
+table Trait {
+	guid:string;
+	methods:[Method];
+	fields:[Field];
+	extends:[TraitApplication];
+}
+
+table TraitList {
+	traits:[Trait];
+}
+
+root_type TraitList;

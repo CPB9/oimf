@@ -1,0 +1,27 @@
+namespace com.cpb9.test.clock
+
+import com.cpb9.core.{U32, Boolean}
+
+trait TimeDiff extends I32
+    I32 getSeconds
+    I32 getMinutes
+    I32 getHours
+    I32 getDays
+    I32 getMonths
+    I32 getYears
+
+trait Time extends U32
+    U32 getSecond
+    U32 getMinute
+    U32 getHour
+    U32 getDayOfMonth
+    U32 getMonth
+    U32 getYear
+
+trait Clock extends Serializable
+    Time currentUTCTime
+    Boolean isReady
+    Unit setTime(Time newTime)
+    Unit advanceSecond()
+    Unit advanceMinute()
+    TimeDiff computeDiffWith(Time time)

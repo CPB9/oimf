@@ -1,0 +1,139 @@
+# Объявляем неймспейс, все типы и интерфейсы идут в этот неймспейс
+namespace com.cpb9.test
+
+# Импортим типы и интерфейсы из других пространств
+import com.cpb9.some.name.space.{u8, u32, i8, i32}
+import com.cpb9.oimf.Event
+
+# Объявляем тип вида integer с минимумом и максимумом
+@integer, unsigned, min: 0, max: 65535
+type u16 in 0..65535
+
+# Тип вида float
+type f32 in 1.175494351e-38..3.40282346e+38
+
+type BER in 0..*
+
+# Объявляем новый тип на основе старого с добавлением тарировок
+@values: [[0, OK, Okay], [1, NOT_OK, Not okay]]
+type BortStatus extends u16 in 0..1000
+
+# Новый тип с новой тарировкой, старые сохраняются
+@values: [[2, SERIOUS_NOT_OK, Really not okay]]
+type ExtendedBortStatus extends BortStatus
+
+# Типа енума
+@values: [
+    [0, SUCCESS, Okay],
+    [1, ALREADY_EXECUTED, Hack off],
+    [2, BAD_FORMAT, Illegal attributes],
+    [3, BAD_LIMITS, Bad value],
+    [4, FAILED, Failed],
+    [5, DELAYED, Команда будет выполнена позже],
+    [6, EXECUTED, Команда запущена, результат ждите]]
+type CommandResult extends u8
+
+# Подмножество енума
+type ImmediateCommandResult extends CommandResult in 0..4
+
+# Опять
+@values: [
+    [0, COMPONENT_DOWN, Компонент даун], # Comment
+    [1, YOU_ARE_DOWN, Ты даун]]
+type FailMsg extends u16
+
+# И снова
+@values: [
+    [0, TOO_BIG, У тебя слишком большой],
+    [1, "TOO_SMALL", "У тебя слишком маленький"]]
+type ArgumentError extends u16
+
+@values: [[0, OK, OK]]
+type SuccessMsg extends u16 in 0..0
+
+# Структурка под событийное сообщение, где код события это SuccessMsg и по умолчанию не передается время
+@defaultTime: no_time
+interface SuccessCommandResult extends Event[SuccessMsg]
+
+# Сообщение с кодом FailMsg и временем в виде GPS Time
+@defaultTime: gps
+interface FailedCommandError extends Event[FailMsg]
+
+@min: 1
+type DataDumpLength extends BER
+
+# Структурка дин. размера с массивом (массив будет идти с размером)
+interface DataDump extends Struct
+    DynamicArray[DataDumpLength, byte] data
+
+interface IllegalArgumentsError extends Struct
+    U8 paramNum
+    ArgumentError error
+
+# Структура с тегами и опциональными полями
+interface SomeStruct extends TaggedStruct[SuccessMsg]
+    U32 abc optional
+    U32 cde
+    U16 por
+
+# Структурка с тегами может наследовать структурку с тегами
+interface SomeExtendedStruct extends SomeStruct
+    U32 fed optional
+
+interface SomeExtendedAStruct extends SomeStruct
+    U32 fed # COMPILATION ERROR: can't be required
+
+interface SomeEStruct extends SomeStruct
+    U16 abdef
+
+interface StructA extends Struct
+    U16 b
+    U32 c
+
+# Тут все ок, совместимость не нарушена
+interface StructC extends StructA
+    U32 abdef
+    Optional[U16] bedfff
+
+interface Interface2
+
+# Тут тоже ок
+interface StructB extends StructA, Interface2
+    U16 d
+
+interface Coords extends Struct
+    U16 x
+    U16 y
+    U16 z
+
+interface InterfaceTest extends Struct
+    U32 speed
+    U16 x
+    U16 y
+    U16 z
+    Coords coords
+    setCoordsXYZ(U16 x, U16 y, U16 z)
+    setCoords(Coords coords)
+
+type ParamType extends F32
+type ParamType2 extends U16
+
+# Интерфейс это набор сообщений и команд
+@guid: "eb5e9d68-435f-4b1c-93cb-1f9217fed052"
+interface Controlable extends InterfaceTest
+    CommandResult onCommandFinished
+    executeCommand(ParamType param1, ParamType2 param2)
+
+interface Struct56 extends Struct
+    U16 a# Комментарий
+    U32 b
+    F32 c
+
+interface Tank74 extends Struct, Controlable, Interface1
+    Interface1 subDevice
+    Interface2 subDevice2
+    # Комментарий
+    Struct56 subStruct
+    # Сообщение
+    @event
+    Struct56 eventStruct

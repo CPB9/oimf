@@ -1,0 +1,26 @@
+package com.cpb9.oimf.code.gen.cpp;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+
+/**
+ * @author Artem Shein
+ */
+public class HppPointerType implements HppType
+{
+	private final HppType baseType;
+
+	public HppPointerType(HppType baseType)
+	{
+		this.baseType = baseType;
+	}
+
+	@Override
+	public void generate(@NotNull Appendable appendable, @NotNull CppGeneratorConfiguration config)
+			throws IOException
+	{
+		baseType.generate(appendable, config);
+		appendable.append("*");
+	}
+}

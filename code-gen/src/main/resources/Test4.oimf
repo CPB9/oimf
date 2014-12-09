@@ -1,0 +1,58 @@
+namespace com.cpb9.test.oimf2
+
+interface Position2D[C] extends Struct
+    C x
+    C y
+
+interface Speed2D[C] extends Struct
+    C xSpeed
+    C ySpeed
+
+interface Position3D[C] extends Position2D[C]
+    C z
+
+interface Positioned3D[C]
+    Position3D[C] position
+
+interface Speed3D[C] extends Speed2D[C]
+    X zSpeed
+
+interface Movable3D[C] extends Positioned3D[C]
+    moveTo(Position3D[C] position)
+    Speed3D[C] currentSpeed
+
+interface DiskDrive
+    Size freeMemory
+    Size totalMemory
+    Size occupiedMemory
+    Size freeMemory
+    Size totalMemory
+    Size occupiedMemory
+    unmount() #=> Method[]
+    mountTo(Path path) #=> Method[@name: path; Path] mountTo
+
+interface DiskDriveInfo extends Struct
+    Size diskDriveNum
+    DiskDrive info
+
+interface MayHaveDisksDrives
+    Size diskDrivesAvailable
+    DiskDriveInfo diskInfo
+    processDiskDriveCommand(Size diskDriveNum, Method[DiskDrive] command)
+
+interface LinuxMachine extends MayHaveDiskDrives
+    Timestamp currentTime
+    CPUClockSpeed cpuClockSpeed
+    String kernelVersion
+    reboot()
+    killProcess(PID pid)
+    shutdown()
+
+interface IncludesBattery
+    F32 batteryLife
+
+interface Copter extends Movable3D[F32], IncludesBattery
+    land()
+    start()
+
+interface LinuxBasedCopter extends LinuxMachine, Movable3D[F32]

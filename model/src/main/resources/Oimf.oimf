@@ -1,0 +1,56 @@
+namespace oimf
+
+trait Any
+
+trait Unit
+
+trait As[T]
+    T as()
+
+trait From[T]
+    Unit from(T value)
+
+trait IsomorphicWith[T] extends As[T], From[T]
+
+trait Boolean
+
+trait Size
+
+trait Char
+
+trait Bounded
+    Size size()
+    Boolean isEmpty()
+
+trait List[T] extends Bounded
+    T get(Size index)
+
+trait AnsiString extends List[Char]
+
+trait QualifiedName extends IsomorphicWith[AnsiString], Bounded
+    List[AnsiString] parts
+    AnsiString last()
+    Unit dropLast()
+
+trait Method
+    AnsiString name
+    List[MethodArgument] arguments
+    TraitApplication returnType
+
+trait Field
+    AnsiString name
+    TraitApplication type
+
+trait Trait
+    QualifiedName guid
+    List[Method] methods
+    List[Field] fields
+    List[TraitApplication] extends
+
+trait TraitApplication
+    QualifiedName name
+    List[TraitApplication] arguments
+
+trait MethodArgument
+    AnsiString name
+    TraitApplication type
