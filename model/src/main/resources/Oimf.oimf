@@ -16,7 +16,7 @@ trait Boolean
 
 trait Size
 
-trait Char
+trait AsciiChar
 
 trait Bounded
     Size size()
@@ -25,24 +25,39 @@ trait Bounded
 trait List[T] extends Bounded
     T get(Size index)
 
-trait AnsiString extends List[Char]
+trait Optional[T]
+    Boolean isPresent()
+    T get()
 
-trait QualifiedName extends IsomorphicWith[AnsiString], Bounded
-    List[AnsiString] parts
-    AnsiString last()
+trait AsciiString extends List[AsciiChar]
+
+trait QualifiedName extends IsomorphicWith[AsciiString], Bounded
+    List[AsciiString] parts
+    AsciiString last()
     Unit dropLast()
 
-trait Method
-    AnsiString name
+trait Value
+
+trait Annotation
+    TraitApplication traitApplication
+    Value value
+
+trait Annotated
+    List[Annotation] annotations
+
+trait Method extends Annotated
+    AsciiString name
     List[MethodArgument] arguments
     TraitApplication returnType
 
 trait Field
-    AnsiString name
+    AsciiString name
     TraitApplication type
+    Optional[Value] defaultValue
 
 trait Trait
     QualifiedName guid
+    List[AnsiString] arguments
     List[Method] methods
     List[Field] fields
     List[TraitApplication] extends
@@ -52,5 +67,5 @@ trait TraitApplication
     List[TraitApplication] arguments
 
 trait MethodArgument
-    AnsiString name
+    AsciiString name
     TraitApplication type

@@ -1,5 +1,6 @@
 package com.cpb9.oimf.model;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,24 +13,24 @@ import java.util.Objects;
 public class ImmutableOimfAnnotation
 {
 	@NotNull
-	private final String name;
+	private final ImmutableOimfTraitApplication traitApplication;
 	@NotNull
-	private final Optional<Object> value;
+	private final Optional<ImmutableOimfValue> value;
 
-	public ImmutableOimfAnnotation(@NotNull String name, @NotNull Optional<Object> value)
+	public ImmutableOimfAnnotation(@NotNull ImmutableOimfTraitApplication traitApplication, @NotNull Optional<ImmutableOimfValue> value)
 	{
-		this.name = name;
+		this.traitApplication = traitApplication;
 		this.value = value;
 	}
 
 	@NotNull
-	public String getName()
+	public ImmutableOimfTraitApplication getTraitApplication()
 	{
-		return name;
+		return traitApplication;
 	}
 
 	@Nullable
-	public Optional<Object> getValue()
+	public Optional<ImmutableOimfValue> getValue()
 	{
 		return value;
 	}
@@ -42,12 +43,18 @@ public class ImmutableOimfAnnotation
 			return false;
 		}
 		ImmutableOimfAnnotation other = (ImmutableOimfAnnotation) o;
-		return this == other || (Objects.equals(name, other.name) && Objects.equals(value, other.value));
+		return this == other || (Objects.equals(traitApplication, other.traitApplication) && Objects.equals(value, other.value));
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(name, value);
+		return Objects.hash(traitApplication, value);
+	}
+
+	@Override
+	public String toString()
+	{
+		return MoreObjects.toStringHelper(this).add("traitApplication", traitApplication).add("value", value).toString();
 	}
 }

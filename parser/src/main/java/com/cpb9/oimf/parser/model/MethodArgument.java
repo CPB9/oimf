@@ -3,16 +3,19 @@ package com.cpb9.oimf.parser.model;
 import com.google.common.base.MoreObjects;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * @author Artem Shein
  */
-public class MethodArgument
+public class MethodArgument extends Annotated
 {
     private final String name;
     private final TraitApplication type;
 
-    public MethodArgument(String name, TraitApplication type)
+    public MethodArgument(@NotNull List<Annotation> annotations, String name, TraitApplication type)
     {
+        super(annotations);
         this.name = name;
         this.type = type;
     }

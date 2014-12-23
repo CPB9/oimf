@@ -5,7 +5,6 @@ import com.cpb9.oimf.parser.model.*;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,22 +38,16 @@ public class FileModel2OimfModelTransformator
         for (Trait trait : file.getTraits())
         {
             String name = trait.getName();
-            if (traits.contains(name))
-            {
-                result.addError(String.format("conflicting names for '%s'", trait));
-            }
-            else
-            {
-                List<TraitApplication> extendsType = trait.getExtends();
-                HashSet<String> excludeNames = Sets.newHashSet(trait.getArguments());
-                traits.add(new ImmutableOimfTrait(makeAnnotations(trait.getAnnotations()),
-                        ImmutableOimfQualifiedName.createFromString(namespaceName + "." + name),
-                        ImmutableList.copyOf(trait.getArguments()),
-                        makeOimfTraitApplicationsForFileTraitApplications(extendsType, namespaceName, imports,
-                                excludeNames),
-                        makeFields(trait.getFields(), result, namespaceName, imports, excludeNames),
-                        makeMethods(trait.getMethods(), result, namespaceName, imports, excludeNames)));
-            }
+            List<TraitApplication> extendsType = trait.getExtends();
+            HashSet<String> excludeNames = Sets.newHashSet(trait.getArguments());
+            traits.add(new ImmutableOimfTrait(
+                    makeAnnotations(trait.getAnnotations(), namespaceName, imports, excludeNames),
+                    ImmutableOimfQualifiedName.createFromString(namespaceName + "." + name),
+                    ImmutableList.copyOf(trait.getArguments()),
+                    makeOimfTraitApplicationsForFileTraitApplications(extendsType, namespaceName, imports,
+                            excludeNames),
+                    makeFields(trait.getFields(), result, namespaceName, imports, excludeNames),
+                    makeMethods(trait.getMethods(), result, namespaceName, imports, excludeNames)));
         }
     }
 
@@ -102,8 +95,9 @@ public class FileModel2OimfModelTransformator
         for (Method method : methods)
         {
             resultCommands
-                    .add(new ImmutableOimfMethod(method.getName(),
-                            makeOimfTraitApplicationForFileTraitApplication(
+                    .add(new ImmutableOimfMethod(makeAnnotations(method.getAnnotations(), namespaceName, imports, excludeNames),
+                            method.getName(),
+                            makeOimfTraitApplication(
                                     expandName(method.getReturnType(), namespaceName, imports, excludeNames),
                                     namespaceName, imports, excludeNames),
                             makeMethodArguments(method.getArguments(), result, namespaceName, imports, excludeNames)));
@@ -122,9 +116,10 @@ public class FileModel2OimfModelTransformator
         for (Field field : fields)
         {
             resultFields
-                    .add(new ImmutableOimfField(field.getName(), makeOimfTraitApplicationForFileTraitApplication(
+                    .add(new ImmutableOimfField(makeAnnotations(field.getAnnotations(), namespaceName, imports, excludeNames),
+                            field.getName(), makeOimfTraitApplication(
                             expandName(field.getType(), namespaceName, imports, excludeNames), namespaceName,
-                            imports, excludeNames)));
+                            imports, excludeNames), field.getDefaultValue()));
         }
         return ImmutableList.copyOf(resultFields);
     }
@@ -142,7 +137,8 @@ public class FileModel2OimfModelTransformator
         for (MethodArgument arg : arguments)
         {
             args.add(new ImmutableOimfMethodArgument(
-                    makeOimfTraitApplicationForFileTraitApplication(
+                    makeAnnotations(arg.getAnnotations(), namespaceName, imports, excludeNames),
+                    makeOimfTraitApplication(
                             arg.getType(),
                             namespaceName, imports, excludeNames),
                     arg.getName()));
@@ -151,7 +147,7 @@ public class FileModel2OimfModelTransformator
     }
 
     @NotNull
-    private ImmutableOimfTraitApplication makeOimfTraitApplicationForFileTraitApplication(
+    private ImmutableOimfTraitApplication makeOimfTraitApplication(
             @NotNull TraitApplication traitApplication,
             @NotNull
             ImmutableOimfQualifiedName namespaceName,
@@ -183,17 +179,21 @@ public class FileModel2OimfModelTransformator
     }
 
     @NotNull
-    private ImmutableMap<String, ImmutableOimfAnnotation> makeAnnotations(@NotNull Map<String, Annotation> annotations)
+    private ImmutableList<ImmutableOimfAnnotation> makeAnnotations(@NotNull List<Annotation> annotations,
+                                                                   @NotNull ImmutableOimfQualifiedName namespaceName,
+                                                                   @NotNull Map<String, ImmutableOimfQualifiedName> imports,
+                                                                   @NotNull Set<String> excludeNames)
     {
-        Map<String, ImmutableOimfAnnotation> result =
-                new HashMap<>(Preconditions.checkNotNull(annotations, "annotations").size());
-        for (Map.Entry<String, Annotation> annotationEntry : annotations.entrySet())
+        List<ImmutableOimfAnnotation> result =
+                new ArrayList<>(Preconditions.checkNotNull(annotations, "annotations").size());
+        for (Annotation annotation : annotations)
         {
-            Annotation annotation = annotationEntry.getValue();
-            result.put(annotationEntry.getKey(), new ImmutableOimfAnnotation(annotation.getName(),
-                    Optional.fromNullable(annotation.getValue())));
+            result.add(new ImmutableOimfAnnotation(
+                    makeOimfTraitApplication(
+                            annotation.getTraitApplication(), namespaceName, imports, excludeNames),
+                    annotation.getValue()));
         }
-        return ImmutableMap.copyOf(result);
+        return ImmutableList.copyOf(result);
     }
 
     @NotNull

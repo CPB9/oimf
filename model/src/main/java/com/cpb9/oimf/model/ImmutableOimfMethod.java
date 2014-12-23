@@ -11,15 +11,16 @@ import java.lang.String;
 /**
  * @author Artem Shein
  */
-public class ImmutableOimfMethod
+public class ImmutableOimfMethod extends ImmutableOimfAnnotated
 {
 	private final String name;
 	private final ImmutableOimfTraitApplication returnType;
 	private final ImmutableList<ImmutableOimfMethodArgument> arguments;
 
-	public ImmutableOimfMethod(@NotNull String name, @NotNull ImmutableOimfTraitApplication returnType,
+	public ImmutableOimfMethod(@NotNull ImmutableList<ImmutableOimfAnnotation> annotations, @NotNull String name, @NotNull ImmutableOimfTraitApplication returnType,
 							   @NotNull ImmutableList<ImmutableOimfMethodArgument> arguments)
 	{
+		super(annotations);
 		this.name = name;
 		this.returnType = returnType;
 		this.arguments = arguments;
@@ -45,7 +46,7 @@ public class ImmutableOimfMethod
 	@Override
 	public String toString()
 	{
-		return MoreObjects.toStringHelper(this).add("name", name).add("returnType", returnType).add("arguments", arguments)
+		return MoreObjects.toStringHelper(this).add("super", super.toString()).add("name", name).add("returnType", returnType).add("arguments", arguments)
 				.toString();
 	}
 
@@ -57,13 +58,13 @@ public class ImmutableOimfMethod
 			return false;
 		}
 		ImmutableOimfMethod other = (ImmutableOimfMethod) o;
-		return this == other || (Objects.equal(name, other.name) && Objects.equal(returnType, other.returnType)
+		return this == other || (super.equals(other) && Objects.equal(name, other.name) && Objects.equal(returnType, other.returnType)
 				&& Objects.equal(arguments, other.arguments));
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hashCode(name, returnType, arguments);
+		return Objects.hashCode(super.hashCode(), name, returnType, arguments);
 	}
 }

@@ -9,14 +9,15 @@ import java.util.List;
 /**
  * @author Artem Shein
  */
-public class Method
+public class Method extends Annotated
 {
     private final String name;
     private final TraitApplication returnType;
     private List<MethodArgument> arguments = new ArrayList<>();
 
-    public Method(String name, TraitApplication retType)
+    public Method(@NotNull List<Annotation> annotations, String name, TraitApplication retType)
     {
+        super(annotations);
         this.name = name;
         this.returnType = retType;
     }

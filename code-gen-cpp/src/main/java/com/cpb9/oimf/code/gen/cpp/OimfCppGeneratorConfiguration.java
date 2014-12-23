@@ -38,7 +38,7 @@ public class OimfCppGeneratorConfiguration
 	private File outputPath = new File(System.getProperty("user.dir"));
 
 	@NotNull
-	@Option(name = "--ownership-style", required = true, usage = "Use specified ownership style", metaVar = "OWNERSHIP_STYLE")
+	@Option(name = "--ownership-style", usage = "Use specified ownership style", metaVar = "OWNERSHIP_STYLE")
 	private OwnershipStyle ownershipStyle = OwnershipStyle.POINTER;
 
 	@Option(name = "-a", aliases = {"--namespace-aliases"}, handler = MapOptionHandler.class, usage = "Namespace aliases")

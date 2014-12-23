@@ -23,7 +23,7 @@ public class ParserTest
 			if ("oimf.Trait".equals(trait.getGuid().toString()))
 			{
 				isTraitFound = true;
-				Assert.assertEquals("must have 4 fields", 4, trait.getFields().size());
+				Assert.assertEquals("must have 5 fields", 5, trait.getFields().size());
 				Assert.assertFalse("field name must not be empty", trait.getFields().get(0).getName().isEmpty());
 			}
 		}

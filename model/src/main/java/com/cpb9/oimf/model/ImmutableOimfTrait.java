@@ -18,12 +18,15 @@ public class ImmutableOimfTrait extends ImmutableOimfAnnotated
 	private final ImmutableList<ImmutableOimfField> fields;
 	@NotNull
 	private final ImmutableOimfQualifiedName guid;
+	@NotNull
 	private final ImmutableList<ImmutableOimfTraitApplication> anExtends;
+	@NotNull
 	private final ImmutableList<String> arguments;
 
-	public ImmutableOimfTrait(@NotNull ImmutableMap<String, ImmutableOimfAnnotation> annotations,
+	public ImmutableOimfTrait(@NotNull ImmutableList<ImmutableOimfAnnotation> annotations,
 							  @NotNull ImmutableOimfQualifiedName guid,
-							  ImmutableList<String> arguments, @NotNull ImmutableList<ImmutableOimfTraitApplication> anExtends,
+							  @NotNull ImmutableList<String> arguments,
+							  @NotNull ImmutableList<ImmutableOimfTraitApplication> anExtends,
 							  @NotNull ImmutableList<ImmutableOimfField> fields,
 							  @NotNull ImmutableList<ImmutableOimfMethod> methods)
 	{
@@ -82,14 +85,14 @@ public class ImmutableOimfTrait extends ImmutableOimfAnnotated
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(annotations, guid, anExtends, arguments, fields, methods);
+		return Objects.hash(super.hashCode(), guid, anExtends, arguments, fields, methods);
 	}
 
 	@NotNull
 	@Override
 	public String toString()
 	{
-		return MoreObjects.toStringHelper(this).add("annotations", annotations).add("extends", anExtends)
+		return MoreObjects.toStringHelper(this).add("super", super.toString()).add("extends", anExtends)
 				.add("arguments", arguments).add("fields", fields).add("methods", methods).toString();
 	}
 }

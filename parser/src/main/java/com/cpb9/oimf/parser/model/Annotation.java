@@ -1,6 +1,8 @@
 package com.cpb9.oimf.parser.model;
 
+import com.cpb9.oimf.model.ImmutableOimfValue;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -8,34 +10,38 @@ import org.jetbrains.annotations.NotNull;
  */
 public class Annotation
 {
-    private final String name;
-    private Object value;
+    @NotNull
+    private final TraitApplication traitApplication;
+    @NotNull
+    private Optional<ImmutableOimfValue> value;
 
-    public Annotation(String name)
+    public Annotation(@NotNull TraitApplication traitApplication, @NotNull Optional<ImmutableOimfValue> value)
     {
-        this.name = name;
+        this.traitApplication = traitApplication;
+        this.value = value;
     }
 
-    public boolean setValue(Object value)
+    public void setValue(Optional<ImmutableOimfValue> value)
     {
         this.value = value;
-        return true;
     }
 
-    public String getName()
-    {
-        return name;
-    }
-
-    public Object getValue()
+    @NotNull
+    public Optional<ImmutableOimfValue> getValue()
     {
         return value;
+    }
+
+    @NotNull
+    public TraitApplication getTraitApplication()
+    {
+        return traitApplication;
     }
 
     @NotNull
     @Override
     public String toString()
     {
-        return MoreObjects.toStringHelper(this).add("name", name).add("value", value).toString();
+        return MoreObjects.toStringHelper(this).add("traitApplication", traitApplication).add("value", value).toString();
     }
 }

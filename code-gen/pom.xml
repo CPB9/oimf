@@ -11,7 +11,7 @@
 		<relativePath>../build</relativePath>
     </parent>
     <artifactId>code-gen</artifactId>
-    <version>${project.parent.version}</version>
+    <version>1.0-SNAPSHOT</version>
 
     <name>OIMF code generation tools</name>
     <description>OIMF code generation tools</description>
@@ -20,6 +20,11 @@
         <dependency>
             <groupId>com.cpb9.oimf</groupId>
             <artifactId>parser</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cpb9.oimf</groupId>
+            <artifactId>serialization</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>

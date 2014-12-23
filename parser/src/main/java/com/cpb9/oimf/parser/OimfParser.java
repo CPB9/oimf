@@ -1,6 +1,9 @@
 package com.cpb9.oimf.parser;
 
+import com.cpb9.oimf.model.*;
 import com.cpb9.oimf.parser.model.*;
+import com.google.common.base.*;
+import com.google.common.base.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;
@@ -10,10 +13,7 @@ import org.parboiled.support.Var;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Artem Shein
@@ -24,17 +24,12 @@ public class OimfParser extends BaseParser<Object>
     public Rule File()
     {
         Var<File> file = new Var<>();
-        Var<Map<String, Annotation>> annotations = new Var<>();
         return Sequence(Namespace(),
                 file.set(new File((Namespace) pop())),
                 Optional(Imports(),
                         file.get().setImports((List<Import>) pop())),
                 ZeroOrMore(Optional(ExtendedWhitespaces()),
-                        FirstOf(Sequence(Annotations(), annotations.set((Map<String, Annotation>) pop()),
-                                        Optional(Whitespaces()), StmtEnd()),
-                                annotations.set(new HashMap<String, Annotation>())),
                         Sequence(Trait(),
-                                ((Trait) peek()).setAnnotations(annotations.get()),
                                 file.get().addTrait((Trait) pop()))),
                 Optional(ExtendedWhitespaces()), EOI, push(file.get()));
     }
@@ -80,47 +75,49 @@ public class OimfParser extends BaseParser<Object>
 
     // Annotations
 
-    Rule Annotations()
+    Rule Annotations(Var<List<Annotation>> annotationsVar)
     {
-        Var<Map<String, Annotation>> annotations = new Var<Map<String, Annotation>>(new HashMap<String, Annotation>());
-        return Sequence("@", Annotation(),
-                annotations.get().put(((Annotation) peek()).getName(), (Annotation) pop()) == null,
-                ZeroOrMore(Optional(Whitespaces()), ',', Optional(Whitespaces()),
-                        Annotation(),
-                        annotations.get().put(((Annotation) peek()).getName(), (Annotation) pop()) == null),
-                push(annotations.get()));
+        return Sequence("@", Annotation(annotationsVar),
+                ZeroOrMore(Optional(ExtendedWhitespaces()), '@',
+                        Annotation(annotationsVar)));
     }
 
-    Rule Annotation()
+    Rule Annotation(Var<List<Annotation>> annotationsVar)
     {
-        return Sequence(Ident(), push(new Annotation(match())),
-                Optional(Optional(Whitespaces()), ':', Optional(Whitespaces()),
-                        YamlValue(), ((Annotation) peek(1)).setValue(pop())));
+        Var<ImmutableOimfValue> valueVar = new Var<>();
+        return Sequence(TraitApplication(), Optional(Whitespaces()), '(',
+                Optional(ExtendedWhitespaces()),
+                Optional(Value(), valueVar.set((ImmutableOimfValue) pop())),
+                Optional(ExtendedWhitespaces()), ')', listAdd(annotationsVar.get(), new Annotation((TraitApplication) pop(), Optional.fromNullable(valueVar.get()))));
     }
 
-    Rule YamlValue()
+    Rule Value()
     {
-        return FirstOf(Boolean(), YamlString(), Float(),
-                Sequence(Integer(), push(Integer.parseInt(match()))),
-                YamlArray(), YamlMap(), Sequence(Ident(), push(match())));
+        return FirstOf(BooleanValue(), StringValue(), FloatValue(),
+                IntegerValue(), ListValue(), MapValue());
     }
 
-    Rule YamlString()
+    Rule StringValue()
     {
-        return FirstOf(Sequence('\"', ZeroOrMore(TestNot('\"'), ANY), push(match()), '\"'),
-                Sequence(OneOrMore(TestNot(AnyOf("\"\'\n,{}[]")), ANY), push(match())));
+        return Sequence('\"', ZeroOrMore(TestNot('\"'), ANY), push(new ImmutableOimfStringValue(match())), '\"');
     }
 
-    Rule Boolean()
+    Rule BooleanValue()
     {
-        return FirstOf(Sequence("true", push(true)),
-                Sequence("false", push(false)));
+        return FirstOf(Sequence("true", push(ImmutableOimfBooleanValue.TRUE)),
+                Sequence("false", push(ImmutableOimfBooleanValue.FALSE)));
     }
 
     Rule BigInteger()
     {
         return FirstOf(Sequence(AnyOf("+-"), push(match()), Number(), push(new BigInteger(pop() + match()))),
                 Sequence(Number(), push(new BigInteger(match()))));
+    }
+
+    Rule IntegerValue()
+    {
+        return Sequence(Integer(),
+                push(new ImmutableOimfIntegerValue((Integer) pop())));
     }
 
     Rule Integer()
@@ -142,11 +139,11 @@ public class OimfParser extends BaseParser<Object>
         return true;
     }
 
-    Rule Float()
+    Rule FloatValue()
     {
         return Sequence(Integer(), '.', Number(), push(match()),
                 Optional(AnyOf("eE"), push(match()), Integer(), push((String) pop(2) + pop(1) + pop())),
-                push(java.lang.Float.parseFloat(pop(1) + "." + pop())));
+                push(new ImmutableOimfFloatValue(Float.parseFloat(pop(1) + "." + pop()))));
     }
 
     Rule BigDecimal()
@@ -155,35 +152,41 @@ public class OimfParser extends BaseParser<Object>
                 Optional(AnyOf("eE"), Optional(AnyOf("+-")), Number()))), push(new BigDecimal(match())));
     }
 
-    Rule YamlArray()
+    Rule ListValue()
     {
-        Var<List<Object>> list = new Var<>();
+        Var<List<ImmutableOimfValue>> list = new Var<>();
         return Sequence('[',
-                list.set(new ArrayList<>()),
+                list.set(new ArrayList<ImmutableOimfValue>()),
                 Optional(ExtendedWhitespaces()),
-                Optional(YamlValue(),
-                        listAdd(list.get(), pop()),
-                        ZeroOrMore(',', Optional(ExtendedWhitespaces()), YamlValue(), list.get().add(pop()))),
+                Optional(Value(),
+                        listAdd(list.get(), (ImmutableOimfValue) pop()),
+                        ZeroOrMore(',', Optional(ExtendedWhitespaces()), Value(), list.get().add((ImmutableOimfValue) pop()))),
                 Optional(ExtendedWhitespaces()),
-                ']', push(list.get()));
+                ']', push(new ImmutableOimfListValue(list.get())));
     }
 
-    Rule YamlMap()
+    Rule MapValue()
     {
-        Var<Map<String, Object>> map = new Var<>();
+        Var<Map<String, ImmutableOimfValue>> map = new Var<>();
         return Sequence('{',
-                map.set(new HashMap<String, Object>()),
-                Optional(YamlMapElement(),
-                        ACTION(map.get().put((String) pop(1), pop()) == null),
-                        ZeroOrMore(',', YamlMapElement(),
-                                ACTION(map.get().put((String) pop(1), pop()) == null))),
+                map.set(new LinkedHashMap<String, ImmutableOimfValue>()),
+                Optional(MapValueElement(),
+                        mapPut(map.get(), (String) pop(1), (ImmutableOimfValue) pop()),
+                        ZeroOrMore(',', MapValueElement(),
+                                mapPut(map.get(), (String) pop(1), (ImmutableOimfValue) pop()))),
                 '}', push(map.get()));
     }
 
-    Rule YamlMapElement()
+    protected <T> boolean mapPut(Map<String, T> map, String key, T value)
+    {
+        map.put(key, value);
+        return true;
+    }
+
+    Rule MapValueElement()
     {
         return Sequence(Ident(), push(match()),
-                Optional(Whitespaces()), ':', Optional(ExtendedWhitespaces()), YamlValue());
+                Optional(Whitespaces()), ':', Optional(ExtendedWhitespaces()), Value());
     }
 
     @NotNull
@@ -197,24 +200,26 @@ public class OimfParser extends BaseParser<Object>
     Rule Trait()
     {
         Var<Trait> traitVar = new Var<>();
-        return Sequence("trait", Whitespaces(), Ident(), traitVar.set(new Trait(match())),
+        Var<List<Annotation>> annotationsVar = new Var<List<Annotation>>(new ArrayList<Annotation>());
+        return Sequence(Optional(Annotations(annotationsVar), ExtendedWhitespaces()), "trait", Whitespaces(),
+                Ident(), traitVar.set(new Trait(annotationsVar.get(), match())),
                 Optional('[', Ident(), listAdd(traitVar.get().getArguments(), match()), ZeroOrMore(',', Whitespaces(),
                         Ident(), listAdd(traitVar.get().getArguments(), match())), ']'),
-                Optional(Whitespaces(), "extends", Whitespaces(), TraitArgument(), listAdd(traitVar.get().getExtends(),
+                Optional(Whitespaces(), "extends", Whitespaces(), TraitApplication(), listAdd(traitVar.get().getExtends(),
                         (TraitApplication) pop()), ZeroOrMore(',', ExtendedWhitespaces(),
-                        TraitArgument(), listAdd(traitVar.get().getExtends(), (TraitApplication) pop()))),
+                        TraitApplication(), listAdd(traitVar.get().getExtends(), (TraitApplication) pop()))),
                 Optional(Whitespaces()), StmtEnd(), ZeroOrMore(FieldOrMethod(traitVar)),
                 push(traitVar.get()));
     }
 
-    Rule TraitArgument()
+    Rule TraitApplication()
     {
         Var<List<TraitApplication>> traitApplicationsVar =
                 new Var<List<TraitApplication>>(new ArrayList<TraitApplication>());
         return Sequence(QualifiedIdent(), push(match()),
-                Optional('[', TraitArgument(),
+                Optional('[', TraitApplication(),
                         listAdd(traitApplicationsVar.get(), (TraitApplication) pop()),
-                        ZeroOrMore(',', Whitespaces(), TraitArgument(),
+                        ZeroOrMore(',', Whitespaces(), TraitApplication(),
                                 listAdd(traitApplicationsVar.get(), (TraitApplication) pop())),
                         ']'),
                 push(new TraitApplication((String) pop(), traitApplicationsVar.get())));
@@ -228,16 +233,19 @@ public class OimfParser extends BaseParser<Object>
 
     Rule FieldOrMethod(Var<Trait> traitVar)
     {
-        return Sequence(Indent(), ZeroOrMore(Comment(), StmtEnd(), Indent()), TraitArgument(), Whitespaces(),
+        Var<List<Annotation>> annotationsVar = new Var<List<Annotation>>(new ArrayList<Annotation>());
+        Var<ImmutableOimfValue> defaultValueVar = new Var<>();
+        return Sequence(Indent(), ZeroOrMore(FirstOf(Comment(), Annotation(annotationsVar)), StmtEnd(), Indent()), TraitApplication(), Whitespaces(),
                 Ident(), push(match()),
                 FirstOf(
-                        Sequence('(', push(new Method((String) pop(), (TraitApplication) pop())),
+                        Sequence('(', Optional(Annotations(annotationsVar), Whitespaces()), push(new Method(annotationsVar.get(), (String) pop(), (TraitApplication) pop())),
                                 Optional(TraitMethodArguments(),
                                         ((Method) peek(1)).setArguments((List<MethodArgument>) pop())),
                         ')', listAdd(traitVar.get().getMethods(), (Method) pop())),
-                        Sequence(EMPTY,
+                        Sequence(Optional(Whitespaces(), "default", Whitespaces(), Value(),
+                                        defaultValueVar.set((ImmutableOimfValue) pop())),
                                 listAdd(traitVar.get().getFields(),
-                                        new Field((String) pop(), (TraitApplication) pop())))),
+                                        new Field(annotationsVar.get(), (String) pop(), (TraitApplication) pop(), Optional.fromNullable(defaultValueVar.get()))))),
                 Optional(Whitespaces()), StmtEnd());
     }
 
@@ -254,8 +262,9 @@ public class OimfParser extends BaseParser<Object>
 
     Rule TraitMethodArgument()
     {
-        return Sequence(TraitArgument(), Whitespaces(), Ident(),
-                push(new MethodArgument(match(), (TraitApplication) pop())));
+        Var<List<Annotation>> annotationsVar = new Var<List<Annotation>>(new ArrayList<Annotation>());
+        return Sequence(Optional(Annotations(annotationsVar), Whitespaces()), TraitApplication(), Whitespaces(), Ident(),
+                push(new MethodArgument(annotationsVar.get(), match(), (TraitApplication) pop())));
     }
 
     Rule Number()

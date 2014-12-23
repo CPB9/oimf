@@ -1,6 +1,7 @@
 package com.cpb9.oimf.model;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -10,15 +11,15 @@ import java.util.Objects;
  */
 abstract public class ImmutableOimfAnnotated
 {
-    protected final ImmutableMap<String, ImmutableOimfAnnotation> annotations;
+    protected final ImmutableList<ImmutableOimfAnnotation> annotations;
 
-    protected ImmutableOimfAnnotated(@NotNull ImmutableMap<String, ImmutableOimfAnnotation> annotations)
+    protected ImmutableOimfAnnotated(@NotNull ImmutableList<ImmutableOimfAnnotation> annotations)
     {
         this.annotations = annotations;
     }
 
     @NotNull
-    public ImmutableMap<String, ImmutableOimfAnnotation> getAnnotations()
+    public ImmutableList<ImmutableOimfAnnotation> getAnnotations()
     {
         return annotations;
     }
@@ -38,5 +39,11 @@ abstract public class ImmutableOimfAnnotated
     public int hashCode()
     {
         return annotations.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return MoreObjects.toStringHelper(this).add("annotations", annotations).toString();
     }
 }

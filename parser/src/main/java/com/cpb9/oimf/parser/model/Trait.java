@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Artem Shein
  */
-public class Trait extends AnnotatedType
+public class Trait extends Annotated
 {
     private final String name;
     @NotNull
@@ -22,9 +22,9 @@ public class Trait extends AnnotatedType
     @NotNull
     private List<Field> fields = new ArrayList<>();
 
-    public Trait(@NotNull String name)
+    public Trait(@NotNull List<Annotation> annotations, @NotNull String name)
     {
-        super(new HashMap<String, Annotation>());
+        super(annotations);
         this.name = name;
     }
 

@@ -19,16 +19,15 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 {
 	private static final HppEol EOL = new HppEol();
 	public static final String Q_SHARED_POINTER = "QSharedPointer";
+	public static final String HEADER_EXTENSION = ".h";
 	private final Logger LOG = LoggerFactory.getLogger(OimfCppGenerator.class);
 	private final boolean isQtSharedPointerOwnershipStyle;
-	private final boolean isPointerOwnershipStyle;
 
 	public OimfCppGenerator(@NotNull OimfCppGeneratorConfiguration config, @NotNull Set<ImmutableOimfTrait> traits)
 	{
 		super(config, traits);
 		OwnershipStyle ownershipStyle = config.getOwnershipStyle();
 		isQtSharedPointerOwnershipStyle = OwnershipStyle.QT_SHARED_POINTER.equals(ownershipStyle);
-		isPointerOwnershipStyle = OwnershipStyle.POINTER.equals(ownershipStyle);
 	}
 
 	public void generate()
@@ -61,16 +60,16 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		}
 		ImmutableOimfQualifiedName traitApplicationName = traitApplication.getName();
 		ensureNamespaceDirExistsOrCreate(traitApplicationName);
-		File hppFile = new File(config.getOutputPath(),
-				StringUtils.join(getCombinedQualifiedNameFor(traitApplication).getParts(), "/") + ".hpp");
-		ensureFileDoesNotExistOrDeleteIt(hppFile);
+		File hFile = new File(config.getOutputPath(),
+				StringUtils.join(getCombinedQualifiedNameFor(traitApplication).getParts(), "/") + HEADER_EXTENSION);
+		ensureFileDoesNotExistOrDeleteIt(hFile);
 
-		LOG.debug("Generating files: '{}'", hppFile.getAbsolutePath());
-		try (FileOutputStream hppStream = new FileOutputStream(hppFile);
-		     OutputStreamWriter hppWriter = new OutputStreamWriter(hppStream))
+		LOG.debug("Generating files: '{}'", hFile.getAbsolutePath());
+		try (FileOutputStream hStream = new FileOutputStream(hFile);
+		     OutputStreamWriter hWriter = new OutputStreamWriter(hStream))
 		{
 			CppGeneratorConfiguration codeGenConfig = new CppGeneratorConfiguration();
-			hppWriter.write(config.getHppPrologue());
+			hWriter.write(config.getHppPrologue());
 
 			List<String> extendsClassNames = resolveExtendsClassNames(traitApplication);
 			List<HppClassMethod> methodDecls = resolveMethodDeclarations(traitApplication);
@@ -102,10 +101,10 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 			namespaceElements.add(new HppClassDef(getCombinedNameFor(traitApplication), extendsClassNames, methodDecls));
 			hpp.append(new HppNamespaceDef(StringUtils.join(traitApplicationName.newDropLast().getParts(), "::"),
 					namespaceElements));
-			codeGenConfig.setAppendable(hppWriter);
-			hpp.generate(hppWriter, codeGenConfig);
+			codeGenConfig.setAppendable(hWriter);
+			hpp.generate(hWriter, codeGenConfig);
 
-			hppWriter.write(config.getHppEpilogue());
+			hWriter.write(config.getHppEpilogue());
 		}
 		catch (IOException e)
 		{
@@ -317,7 +316,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 				if (mappedMethodArgumentType != type)
 				{
 					isArgumentsMapped = true;
-					mappedArguments.add(new ImmutableOimfMethodArgument(mappedMethodArgumentType, argument.getName()));
+					mappedArguments.add(new ImmutableOimfMethodArgument(argument.getAnnotations(), mappedMethodArgumentType, argument.getName()));
 				}
 				else
 				{
@@ -327,7 +326,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		}
 		if (mappedReturnType != returnType || isArgumentsMapped)
 		{
-			method = new ImmutableOimfMethod(method.getName(), mappedReturnType, ImmutableList.copyOf(mappedArguments));
+			method = new ImmutableOimfMethod(method.getAnnotations(), method.getName(), mappedReturnType, ImmutableList.copyOf(mappedArguments));
 		}
 		return method;
 	}
@@ -340,7 +339,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		ImmutableOimfTraitApplication mappedType = applyTraitApplication(type, mappings);
 		if (mappedType != type)
 		{
-			field = new ImmutableOimfField(field.getName(), mappedType);
+			field = new ImmutableOimfField(field.getAnnotations(), field.getName(), mappedType, field.getDefaultValue());
 		}
 		return field;
 	}
@@ -480,7 +479,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		{
 			if (mapping == null)
 			{
-				includes.add(StringUtils.join(name.getParts(), "/") + ".hpp");
+				includes.add(StringUtils.join(name.getParts(), "/") + HEADER_EXTENSION);
 				if (isQtSharedPointerOwnershipStyle)
 				{
 					includes.add(Q_SHARED_POINTER);

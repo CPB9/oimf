@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -71,7 +70,7 @@ public class GeneratorTest
 		createSqliteDatabaseSchema(outputFile);
 
 		TransformationResult<Set<ImmutableOimfTrait>> result = ParserUtils.transformFiles(ParserUtils.parseResource("Oimf.oimf"),
-				ParserUtils.parseResource("OimfRuntime.oimf"), ParserUtils.parseResource("Core.oimf"));
+				ParserUtils.parseResource("Serialization.oimf"));
 		OimfSqlGeneratorConfiguration config = new OimfSqlGeneratorConfiguration();
 		config.setOutputFile(outputFile);
 		new OimfSqlGenerator(config, result.getValue()).generate();

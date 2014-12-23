@@ -3,30 +3,30 @@ package com.cpb9.oimf.parser.model;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Artem Shein
  */
-public class AnnotatedType
+public class Annotated
 {
     @NotNull
-    protected Map<String, Annotation> annotations;
+    protected List<Annotation> annotations;
 
-    protected AnnotatedType(@NotNull Map<String, Annotation> annotations)
+    protected Annotated(@NotNull List<Annotation> annotations)
     {
         this.annotations = Preconditions.checkNotNull(annotations, "annotations");
     }
 
     @NotNull
-    public Map<String, Annotation> getAnnotations()
+    public List<Annotation> getAnnotations()
     {
         return annotations;
     }
 
-    public boolean setAnnotations(@NotNull Map<String, Annotation> annotations)
+    public void setAnnotations(@NotNull List<Annotation> annotations)
     {
         this.annotations = annotations;
-        return true;
     }
 }

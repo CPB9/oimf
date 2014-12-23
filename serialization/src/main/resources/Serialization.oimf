@@ -1,0 +1,114 @@
+namespace oimf.serialization
+
+import oimf.{Unit, Bounded, Boolean, List, AsciiString, Method, TraitApplication, MethodArgument,
+    Field, QualifiedName, Trait, Bounded, Optional}
+
+trait Float
+trait UnsignedInteger
+trait SignedInteger
+
+trait AnnotationOnly
+
+trait BitSize extends AnnotationOnly
+    U8 size
+
+@BitSize(8)
+trait U8 extends UnsignedInteger
+
+@BitSize(16)
+trait U16 extends UnsignedInteger
+
+@BitSize(32)
+trait U32 extends UnsignedInteger
+
+@BitSize(64)
+trait U64 extends UnsignedInteger
+
+@BitSize(8)
+trait I8 extends SignedInteger
+
+@BitSize(16)
+trait I16 extends SignedInteger
+
+@BitSize(32)
+trait I32 extends SignedInteger
+
+@BitSize(64)
+trait I64 extends SignedInteger
+
+@BitSize(32)
+trait F32 extends Float
+
+@BitSize(64)
+trait F64 extends Float
+
+trait Or[T1, T2]
+    Boolean isFirst()
+    Boolean isSecond()
+    T1 first()
+    T2 second()
+
+trait Set[T] extends Bounded
+    Boolean contains(T value)
+    Unit add(T value)
+
+trait Map[K, V] extends Bounded
+    Set[K] keys()
+    List[V] values()
+    Optional[V] get(K key)
+    Unit insert(K key, V value)
+
+trait Variant
+
+trait Error
+    AsciiString message
+
+trait Result extends Optional[List[Error]]
+    Boolean isSuccess()
+    Boolean isError()
+
+trait TypeWriter[T]
+    Result write(T value)
+
+trait ReadResult extends Result
+    Variant value
+
+trait Writer extends TypeWriter[U8], TypeWriter[I8], TypeWriter[U16],
+        TypeWriter[I16], TypeWriter[U32], TypeWriter[I32], TypeWriter[U64],
+        TypeWriter[I64], TypeWriter[F32], TypeWriter[F64]
+
+trait Reader
+    ReadResult readU8()
+    ReadResult readU16()
+    ReadResult readU32()
+    ReadResult readU64()
+    ReadResult readI8()
+    ReadResult readI16()
+    ReadResult readI32()
+    ReadResult readI64()
+    ReadResult readF32()
+    ReadResult readF64()
+
+trait ValidationError
+    AsciiString message
+
+trait MethodCall
+    Method method
+    TraitApplication traitApplication
+    TraitRegistry traitRegistry
+    Result write(Variant value, Writer writer)
+
+trait FieldValue
+    Field field
+    TraitApplication traitApplication
+    TraitRegistry traitRegistry
+    ReadResult read(Reader reader)
+
+trait Serializer
+    TraitRegistry traitRegistry
+    TraitApplication traitApplication
+    Result write(Variant value, Writer writer)
+    ReadResult read(Reader reader)
+
+trait TraitRegistry extends Map[QualifiedName, Trait]
+    Unit insert(Trait trait)
