@@ -17,16 +17,17 @@ public class HppClassMethodDecl implements HppClassMethod
 	private final HppClassMethodVisibility visibility;
 	private final boolean isVirtual;
 	private final boolean isPure;
+	private final boolean isConst;
 
 	public HppClassMethodDecl(@NotNull String name, @NotNull HppType returnType,
 	                          @NotNull List<HppFuncArgument> args, @NotNull HppClassMethodVisibility visibility)
 	{
-		this(name, returnType, args, visibility, false, false);
+		this(name, returnType, args, visibility, false, false, false);
 	}
 
 	public HppClassMethodDecl(@NotNull String name, @NotNull HppType returnType,
 	                          @NotNull List<HppFuncArgument> args, @NotNull HppClassMethodVisibility visibility,
-	                          boolean isVirtual, boolean isPure)
+	                          boolean isVirtual, boolean isPure, boolean isConst)
 	{
 		this.name = name;
 		this.returnType = returnType;
@@ -35,6 +36,7 @@ public class HppClassMethodDecl implements HppClassMethod
 		Preconditions.checkArgument(!isPure || isVirtual, "Pure method must be virtual also");
 		this.isVirtual = isVirtual;
 		this.isPure = isPure;
+		this.isConst = isConst;
 	}
 
 	@Override
@@ -66,6 +68,10 @@ public class HppClassMethodDecl implements HppClassMethod
 			appendable.append(" ").append(arg.getName());
 		}
 		appendable.append(")");
+		if (isConst)
+		{
+			appendable.append(" const");
+		}
 		if (isPure)
 		{
 			appendable.append(" = 0");

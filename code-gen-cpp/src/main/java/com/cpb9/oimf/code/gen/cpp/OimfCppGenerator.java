@@ -8,9 +8,12 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.cpb9.oimf.code.gen.cpp.OimfCppGeneratorConfiguration.OwnershipStyle;
+import com.cpb9.oimf.code.gen.cpp.OimfCppGeneratorConfiguration.InheritanceStyle;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author Artem Shein
@@ -21,13 +24,15 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 	public static final String Q_SHARED_POINTER = "QSharedPointer";
 	public static final String HEADER_EXTENSION = ".h";
 	private final Logger LOG = LoggerFactory.getLogger(OimfCppGenerator.class);
-	private final boolean isQtSharedPointerOwnershipStyle;
+	private final OwnershipStyle ownershipStyle;
+	private final boolean isUseBaseClassInheritanceStyle;
 
 	public OimfCppGenerator(@NotNull OimfCppGeneratorConfiguration config, @NotNull Set<ImmutableOimfTrait> traits)
 	{
 		super(config, traits);
-		OwnershipStyle ownershipStyle = config.getOwnershipStyle();
-		isQtSharedPointerOwnershipStyle = OwnershipStyle.QT_SHARED_POINTER.equals(ownershipStyle);
+		ownershipStyle = config.getOwnershipStyle();
+		InheritanceStyle inheritanceStyle = config.getInheritanceStyle();
+		isUseBaseClassInheritanceStyle = InheritanceStyle.USE_BASE_CLASSES.equals(inheritanceStyle);
 	}
 
 	public void generate()
@@ -61,7 +66,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		ImmutableOimfQualifiedName traitApplicationName = traitApplication.getName();
 		ensureNamespaceDirExistsOrCreate(traitApplicationName);
 		File hFile = new File(config.getOutputPath(),
-				StringUtils.join(getCombinedQualifiedNameFor(traitApplication).getParts(), "/") + HEADER_EXTENSION);
+				headerPathFor(traitApplication));
 		ensureFileDoesNotExistOrDeleteIt(hFile);
 
 		LOG.debug("Generating files: '{}'", hFile.getAbsolutePath());
@@ -78,14 +83,18 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 			Set<ImmutableOimfTraitApplication> dependencies = new HashSet<>();
 			resolveDependenciesForTraitApplication(traitApplication, dependencies);
 
-			Set<String> includes = makeIncludesForTraitApplications(dependencies);
+			Set<ImmutableOimfTraitApplication> extendsDependencies = resolveExtendsDependencies(traitApplication);
 
 			HppFile hpp = new HppFile();
 			hpp.append(new HppPragma("once"));
+
+			Set<String> includes = makeIncludesForTraitApplications(OwnershipStyle.VALUE.equals(ownershipStyle) || OwnershipStyle.REF.equals(ownershipStyle)
+					? extendsDependencies : dependencies);
 			for (String include : includes)
 			{
 				hpp.append(new HppInclude(include));
 			}
+
 			hpp.append(EOL);
 			hpp.append(new HppComment("External dependencies"));
 			hpp.append(EOL);
@@ -98,7 +107,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 			{
 				namespaceElements.add(EOL);
 			}
-			namespaceElements.add(new HppClassDef(getCombinedNameFor(traitApplication), extendsClassNames, methodDecls));
+			namespaceElements.add(new HppClassDef(classNameFor(traitApplication), extendsClassNames, methodDecls));
 			hpp.append(new HppNamespaceDef(StringUtils.join(traitApplicationName.newDropLast().getParts(), "::"),
 					namespaceElements));
 			codeGenConfig.setAppendable(hWriter);
@@ -110,6 +119,34 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		{
 			throw new CodeGenerationException(e);
 		}
+	}
+
+	private Set<ImmutableOimfTraitApplication> resolveExtendsDependencies(ImmutableOimfTraitApplication traitApplication)
+	{
+		Set<ImmutableOimfTraitApplication> extendsDependencies = new HashSet<>();
+		resolveDependenciesForTraitApplication(traitApplication, extendsDependencies);
+		extendsDependencies = extendsDependencies.stream().filter(new Predicate<ImmutableOimfTraitApplication>()
+        {
+            @Override
+            public boolean test(ImmutableOimfTraitApplication traitApp)
+            {
+                return config.getTraitMappings().containsKey(getCombinedQualifiedNameFor(traitApp).toString());
+            }
+        }).collect(Collectors.<ImmutableOimfTraitApplication>toSet());
+		resolveDependenciesForTraitApplications(getMappedTraitFor(traitApplication).getExtends(), extendsDependencies);
+		return extendsDependencies;
+	}
+
+	private String classNameFor(ImmutableOimfTraitApplication traitApplication)
+	{
+		return getCombinedNameFor(traitApplication) + (isUseBaseClassInheritanceStyle ? "" : "Interface");
+	}
+
+	@NotNull
+	private String headerPathFor(@NotNull ImmutableOimfTraitApplication traitApplication)
+	{
+		return StringUtils.join(getCombinedQualifiedNameFor(traitApplication).getParts(), "/")
+				+ (isUseBaseClassInheritanceStyle? "" : "Interface") + HEADER_EXTENSION;
 	}
 
 	private List<HppElement> makeUsings(@NotNull Set<ImmutableOimfTraitApplication> traitApplications,
@@ -475,6 +512,7 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 	{
 		ImmutableOimfQualifiedName name = getCombinedQualifiedNameFor(traitApplication);
 		String mapping = config.getTraitMappings().get(name.toString());
+		boolean isQtSharedPointerOwnershipStyle = OwnershipStyle.QT_SHARED_POINTER.equals(ownershipStyle);
 		if (mapping == null || mapping.contains("/"))
 		{
 			if (mapping == null)
@@ -531,10 +569,10 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 				result.add(new HppClassMethodDecl(isAs ? method.getName() + resolveTypeNameForTraitApplication(
 						returnType) : method.getName(),
 						makeTypeForTraitApplication(returnType),
-						args, HppClassMethodVisibility.PUBLIC, true, true));
+						args, HppClassMethodVisibility.PUBLIC, true, true, false));
 			}
 		}
-		result.add(new HppClassMethodImpl("~" + getCombinedNameFor(traitApplication),
+		result.add(new HppClassMethodImpl("~" + classNameFor(traitApplication),
 				HppSimpleType.OMMITED_TYPE,
 				new ArrayList<HppFuncArgument>(), HppClassMethodVisibility.PUBLIC, true, new ArrayList<HppElement>()));
 		return result;
@@ -562,7 +600,8 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 				ImmutableOimfTraitApplication returnType = field.getType();
 				result.add(new HppClassMethodDecl(
 						isAs ? field.getName() + resolveTypeNameForTraitApplication(returnType) : field.getName(),
-						makeTypeForTraitApplication(returnType), new ArrayList<HppFuncArgument>(), HppClassMethodVisibility.PUBLIC, true, true));
+						makeTypeForTraitApplication(returnType),
+						new ArrayList<HppFuncArgument>(), HppClassMethodVisibility.PUBLIC, true, true, true));
 			}
 		}
 		return result;
@@ -575,8 +614,20 @@ public class OimfCppGenerator extends AbstractOimfGenerator<OimfCppGeneratorConf
 		if (mapping == null)
 		{
 			HppSimpleType type = new HppSimpleType(combinedQualifiedName.getLast().get());
-			return isQtSharedPointerOwnershipStyle ? new HppTemplateType(Q_SHARED_POINTER,
-					Arrays.asList(type)) : new HppPointerType(type);
+			switch (ownershipStyle)
+			{
+				case QT_SHARED_POINTER:
+					return new HppTemplateType(Q_SHARED_POINTER,
+							Arrays.asList(type));
+				case POINTER:
+					return new HppPointerType(type);
+				case REF:
+					return new HppRefType(type);
+				case VALUE:
+					return type;
+				default:
+					throw new CodeGenerationException("invalid ownership style");
+			}
 		}
 		else
 		{

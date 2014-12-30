@@ -20,7 +20,7 @@ public class HppInclude implements HppElement
 	public void generate(@NotNull Appendable appendable, @NotNull CppGeneratorConfiguration config)
 			throws IOException
 	{
-		appendable.append("#include<").append(file).append(">");
+		appendable.append("#include <").append(file).append(">");
 		config.eol();
 	}
 }

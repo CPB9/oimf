@@ -9,4 +9,9 @@ public class CodeGenerationException extends RuntimeException
 	{
 		super(e);
 	}
+
+	public CodeGenerationException(String message)
+	{
+		super(message);
+	}
 }

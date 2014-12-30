@@ -15,7 +15,9 @@ import java.util.Map;
 public class OimfCppGeneratorConfiguration
 {
 
-	public static enum OwnershipStyle { QT_SHARED_POINTER, POINTER }
+	public static enum OwnershipStyle { QT_SHARED_POINTER, POINTER, VALUE, REF }
+
+	public static enum InheritanceStyle { USE_BASE_CLASSES, USE_DERIVED_CLASSES }
 
 	@NotNull
 	@Option(name = "--hpp-prologue", metaVar = "STR", usage = "Prologue for .hpp files")
@@ -36,6 +38,10 @@ public class OimfCppGeneratorConfiguration
 	@NotNull
 	@Argument(metaVar = "OUTPUT_PATH", usage = "output path")
 	private File outputPath = new File(System.getProperty("user.dir"));
+
+	@NotNull
+	@Option(name = "--inheritance-style", usage = "Use specified inheritance style", metaVar = "INHERITANCE_STYLE")
+	private InheritanceStyle inheritanceStyle = InheritanceStyle.USE_BASE_CLASSES;
 
 	@NotNull
 	@Option(name = "--ownership-style", usage = "Use specified ownership style", metaVar = "OWNERSHIP_STYLE")
@@ -91,6 +97,17 @@ public class OimfCppGeneratorConfiguration
 	public OwnershipStyle getOwnershipStyle()
 	{
 		return ownershipStyle;
+	}
+
+	@NotNull
+	public InheritanceStyle getInheritanceStyle()
+	{
+		return inheritanceStyle;
+	}
+
+	public void setInheritanceStyle(@NotNull InheritanceStyle inheritanceStyle)
+	{
+		this.inheritanceStyle = inheritanceStyle;
 	}
 
 	@NotNull

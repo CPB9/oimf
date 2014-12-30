@@ -111,4 +111,4 @@ trait Serializer
     ReadResult read(Reader reader)
 
 trait TraitRegistry extends Map[QualifiedName, Trait]
-    Unit insert(Trait trait)
+    Unit insertTrait(Trait trait)

@@ -57,7 +57,7 @@ trait Field
 
 trait Trait
     QualifiedName guid
-    List[AnsiString] arguments
+    List[AsciiString] arguments
     List[Method] methods
     List[Field] fields
     List[TraitApplication] extends
